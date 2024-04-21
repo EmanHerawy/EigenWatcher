@@ -12,9 +12,14 @@ import {
   FindingType,
 } from "forta-agent";
 import {
-  ERC20_TRANSFER_EVENT,
-  TETHER_ADDRESS,
-  TETHER_DECIMALS,
+  DELEGATION_MANAGER_ADDRESS,
+  WITHDRAWAL_QUEUED_EVENT,
+  OPERATOR_SHARES_INCREASED_EVENT,
+  UNDELEGATE_FUNCTION,
+  StakerDelegated_EVENT,
+  WITHDRAWAL_COMPLETE_EVENT,
+  STRATEGY_MANAGER_ADDRESS,
+  Deposit_EVENT,
 } from "./helpers";
 let findingsCount = 0;
 const OneDayInSecs = 86400;
@@ -27,7 +32,55 @@ const handleTransaction: HandleTransaction = async (
 
   // limiting this agent to emit only 5 findings so that the alert feed is not spammed
   if (findingsCount >= 5) return findings;
+if (txEvent.to?.toLocaleLowerCase()==STRATEGY_MANAGER_ADDRESS.toLocaleLowerCase()) {
+console.log("************************event detected for strategy manager *********************************");
+console.log({hash:txEvent.transaction.hash});
+const depositEvent = txEvent.filterLog(
+  Deposit_EVENT,
+  txEvent.to
+);
+console.log({depositEvent});
 
+
+}
+  if (txEvent.to?.toLocaleLowerCase()==DELEGATION_MANAGER_ADDRESS.toLocaleLowerCase()) {
+    console.log("************************event detected for delegation manager *********************************");
+    console.log({hash:txEvent.transaction.hash});
+    console.log({logs:txEvent.logs});
+    console.log({txEvent});
+      
+    const queueWithdrawalEvent = txEvent.filterLog(
+      WITHDRAWAL_QUEUED_EVENT,
+      txEvent.to
+    );
+    const shareIncreasedEvent = txEvent.filterLog(
+      OPERATOR_SHARES_INCREASED_EVENT,
+      txEvent.to
+    );
+    const undelegateCall = txEvent.filterFunction(
+      UNDELEGATE_FUNCTION,
+      txEvent.to
+    );
+    const delegateevent = txEvent.filterLog(
+      StakerDelegated_EVENT,
+      txEvent.to
+    );
+    const WithdrawalCompleteEvent = txEvent.filterLog(
+      WITHDRAWAL_COMPLETE_EVENT,
+      txEvent.to
+    );
+    
+    console.log("************************queueWithdrawalEvent*********************************");
+    console.log(queueWithdrawalEvent);
+    console.log("************************shareIncreasedEvent*********************************");
+    console.log(shareIncreasedEvent);
+    console.log("************************delegateevent*********************************");
+    console.log(delegateevent);
+    console.log("************************undelegateCall*********************************");
+    console.log(undelegateCall);
+    console.log("************************WithdrawalCompleteEvent*********************************");
+    console.log(WithdrawalCompleteEvent);
+     } 
   // // filter the transaction logs for Tether transfer events
   // const tetherTransferEvents = txEvent.filterLog(
   //   ERC20_TRANSFER_EVENT,
