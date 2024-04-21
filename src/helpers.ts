@@ -52,7 +52,19 @@
     /// @notice Emitted when the `strategyWithdrawalDelayBlocks` variable is modified from `previousValue` to `newValue`.
     event StrategyWithdrawalDelayBlocksSet(IStrategy strategy, uint256 previousValue, uint256 newValue);
 
-    
+        event Deposit(address staker, IERC20 token, IStrategy strategy, uint256 shares);
+
+    /// @notice Emitted when `thirdPartyTransfersForbidden` is updated for a strategy and value by the owner
+    event UpdatedThirdPartyTransfersForbidden(IStrategy strategy, bool value);
+
+    /// @notice Emitted when the `strategyWhitelister` is changed
+    event StrategyWhitelisterChanged(address previousAddress, address newAddress);
+
+    /// @notice Emitted when a strategy is added to the approved list of strategies for deposit
+    event StrategyAddedToDepositWhitelist(IStrategy strategy);
+
+    /// @notice Emitted when a strategy is removed from the approved list of strategies for deposit
+    event StrategyRemovedFromDepositWhitelist(IStrategy strategy);
     
     */
 
@@ -64,10 +76,19 @@
     export const Staker_Force_Undelegated_EVENT= "event StakerForceUndelegated(address indexed staker, address indexed operator)";
     export const Staker_Undelegated_EVENT= "event StakerUndelegated(address indexed staker, address indexed operator)";
     export const OperatorSharesDecreased_EVENT = "event OperatorSharesDecreased(address indexed operator, address staker, IStrategy strategy, uint256 shares)";
-    
-
+    export const OperatorRegistered_EVENT = "event OperatorRegistered(address indexed operator, OperatorDetails operatorDetails)";
+    export const OperatorDetailsModified_EVENT = "event OperatorDetailsModified(address indexed operator, OperatorDetails newOperatorDetails)";
+    export const OperatorMetadataURIUpdated_EVENT = "event OperatorMetadataURIUpdated(address indexed operator, string metadataURI)";
+    export const UpdatedThirdPartyTransfersForbidden_EVENT = "event UpdatedThirdPartyTransfersForbidden(IStrategy strategy, bool value)";
+    export const StrategyWhitelisterChanged_EVENT = "event StrategyWhitelisterChanged(address previousAddress, address newAddress)";
+    export const StrategyAddedToDepositWhitelist_EVENT = "event StrategyAddedToDepositWhitelist(IStrategy strategy)";
+    export const StrategyRemovedFromDepositWhitelist_EVENT = "event StrategyRemovedFromDepositWhitelist(IStrategy strategy)";
+    export const Deposit_EVENT = "event Deposit(address staker, IERC20 token, IStrategy strategy, uint256 shares)";
+    export const MinWithdrawalDelayBlocksSet_EVENT = "event MinWithdrawalDelayBlocksSet(uint256 previousValue, uint256 newValue)";
+    export const StrategyWithdrawalDelayBlocksSet_EVENT = "event StrategyWithdrawalDelayBlocksSet(IStrategy strategy, uint256 previousValue, uint256 newValue)";
+     
     // functions 
-    export const undelegate_Fun = "function undelegate(address staker)";
+    export const UNDELEGATE_FUNCTION = "function undelegate(address staker)";
 
 
     // addresses 
