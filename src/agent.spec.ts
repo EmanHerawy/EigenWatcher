@@ -6,11 +6,12 @@ import {
   createTransactionEvent,
   ethers,
 } from "forta-agent";
-import agent, {
+import agent from "./agent";
+import {
   ERC20_TRANSFER_EVENT,
   TETHER_ADDRESS,
   TETHER_DECIMALS,
-} from "./agent";
+} from "./helpers";
 
 describe("high tether transfer agent", () => {
   let handleTransaction: HandleTransaction;
