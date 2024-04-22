@@ -3,8 +3,9 @@ import {
   POD_MANAGER_ADDRESS,
   SLASHER_ADDRESS,
   STRATEGY_MANAGER_ADDRESS,
+  StrategyAddedToDepositWhitelist_EVENT,
 } from "./helpers";
-import { BeaconChainETHDeposited_EVENT, BeaconChainETHWithdrawalCompleted_EVENT, BeaconOracleUpdated_EVENT, Deposit_EVENT, OperatorFrozen_EVENT, PodDeployed_EVENT, PodSharesUpdated_EVENT, WithdrawalQueued_EVENT, getAllAbis } from "./utils";
+import { BeaconChainETHDeposited_EVENT, BeaconChainETHWithdrawalCompleted_EVENT, BeaconOracleUpdated_EVENT, DailyAlertBatch, Deposit_EVENT, OperatorFrozen_EVENT, PodDeployed_EVENT, PodSharesUpdated_EVENT, StrategyRemovedFromDepositWhitelist_EVENT, WithdrawalQueued_EVENT, getAllAbis } from "./utils";
 import {
   BlockEvent,
   Finding,
@@ -27,6 +28,8 @@ let findingsCount = 0;
 const OneDayInSecs = 86400;
 /// @dev TODO: for daily alert
 let nextBatchTime = 0; 
+
+let dailyAlertsBatched:DailyAlertBatch;
 // let totalDeposited = ethers.BigNumber.from(0);
 // let totalWithdrawalInQueue = ethers.BigNumber.from(0);
 // let's set dummy threshold for now
@@ -80,6 +83,38 @@ const handleTransaction: HandleTransaction = async (
             })
           );
         }
+      }else if(event.name===StrategyRemovedFromDepositWhitelist_EVENT){
+        const { strategy } = event.args;
+        console.log({ strategy });
+        dailyAlertsBatched.totalStrategyRemoved += 1;
+        findings.push(
+          Finding.fromObject({
+            name: "Strategy Removed From Deposit Whitelist",
+            description: `Strategy: ${strategy} is removed from deposit whitelist`,
+            alertId: "EIGENWATCHER-9",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              strategy,
+            },
+          })
+        );
+      }else if(event.name===StrategyAddedToDepositWhitelist_EVENT){
+        const { strategy } = event.args;
+        console.log({ strategy });
+        dailyAlertsBatched.totalStrategyAdded += 1;
+        findings.push(
+          Finding.fromObject({
+            name: "Strategy Added To Deposit Whitelist",
+            description: `Strategy: ${strategy} is added to deposit whitelist`,
+            alertId: "EIGENWATCHER-10",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              strategy,
+            },
+          })
+        );
       }
 
 
@@ -100,6 +135,8 @@ const handleTransaction: HandleTransaction = async (
         console.log({ startBlock, nonce, withdrawer, delegatedTo, staker });
         
         for (let i = 0; i < strategies?.length; i++) {
+          dailyAlertsBatched.totalQueuedWithdrawalsCount += 1;
+          dailyAlertsBatched.totalQueuedWithdrawalsShares.add(shares[i]);
           if (shares[i].gt(SHARE_VALUE_THRESHOLD)) {
             findings.push(
               Finding.fromObject({
@@ -139,6 +176,7 @@ const handleTransaction: HandleTransaction = async (
       if (event.name === PodDeployed_EVENT) {
         const { eigenPod, podOwner } = event.args;
         console.log({ eigenPod, podOwner });
+        dailyAlertsBatched.totalNewPods += 1;
         findings.push(
           Finding.fromObject({
             name: "EigenPod Deployed",
@@ -154,6 +192,8 @@ const handleTransaction: HandleTransaction = async (
         );}else if (event.name === BeaconChainETHDeposited_EVENT) {
         const { amount, podOwner } = event.args;
         console.log({ amount, podOwner });
+        dailyAlertsBatched.totalBeaconDepositCount += 1;
+        dailyAlertsBatched.totalBeaconDepositedAmount.add(amount);
         findings.push(
           Finding.fromObject({
             name: "Beacon Chain ETH Deposited",
@@ -171,6 +211,7 @@ const handleTransaction: HandleTransaction = async (
         }else if (event.name === PodSharesUpdated_EVENT) {
         const { sharesDelta, podOwner } = event.args;
         console.log({ sharesDelta, podOwner });
+        dailyAlertsBatched.totalPodShareUpdated += 1;
         findings.push(
           Finding.fromObject({
             name: "Pod Shares Updated",
@@ -187,6 +228,8 @@ const handleTransaction: HandleTransaction = async (
         }else if (event.name === BeaconChainETHWithdrawalCompleted_EVENT) {
         const { shares, nonce, delegatedAddress, withdrawer, withdrawalRoot, podOwner } = event.args;
         console.log({ shares, nonce, delegatedAddress, withdrawer, withdrawalRoot, podOwner });
+        dailyAlertsBatched.totalBeaconWithdrawalCount += 1;
+        dailyAlertsBatched.totalBeaconWithdrawalShare.add(shares);
         findings.push(
           Finding.fromObject({
             name: "Beacon Chain ETH Withdrawal Completed",
@@ -232,7 +275,7 @@ const handleTransaction: HandleTransaction = async (
     console.log({ events });
     for (const event of events) {
       if (event.name === OperatorFrozen_EVENT){
- 
+        dailyAlertsBatched.totalSlashed += 1;
         const { slashedOperator, slashingContract } = event.args;
         console.log({ slashedOperator, slashingContract });
         findings.push(
@@ -252,12 +295,68 @@ const handleTransaction: HandleTransaction = async (
 
     }
   }
+
+  /// check if its time to send daily alerts
+  if (Date.now() >= nextBatchTime) {
+    console.log({now:Date.now() , nextBatchTime});
+    
+    console.log("************************daily alerts batched*********************************");
+    findings.push(
+      Finding.fromObject({
+        name: "Daily Alerts Batched",
+        description: `Daily alerts 
+        ${dailyAlertsBatched.totalNewPods} new pods deployed,
+        ${dailyAlertsBatched.totalPodShareUpdated} pod shares updated,
+        ${dailyAlertsBatched.totalSlashed} operators slashed,
+        ${dailyAlertsBatched.totalStrategyAdded} strategies added,
+        ${dailyAlertsBatched.totalStrategyRemoved} strategies removed,
+        ${dailyAlertsBatched.totalQueuedWithdrawalsCount} queued withdrawals requests, which makes
+        ${dailyAlertsBatched.totalQueuedWithdrawalsShares} total queued withdrawal shares,
+        ${dailyAlertsBatched.totalBeaconDepositCount} beacon deposits requests which makes total deposited amount: ${dailyAlertsBatched.totalBeaconDepositedAmount},
+        ${dailyAlertsBatched.totalBeaconWithdrawalCount} beacon withdrawals requests which makes total withdrawn shares: ${dailyAlertsBatched.totalBeaconWithdrawalShare}`,
+        alertId: "EIGENWATCHER-11",
+        severity: FindingSeverity.Info,
+        type: FindingType.Info,
+        metadata: {
+          dailyAlertsBatched:dailyAlertsBatched as any,
+        },
+      })
+    );
+    dailyAlertsBatched = {
+      totalNewPods: 0,
+      totalPodShareUpdated: 0,
+      totalSlashed: 0,
+      totalStrategyAdded: 0,
+      totalStrategyRemoved: 0,
+      totalQueuedWithdrawalsCount: 0,
+      totalQueuedWithdrawalsShares: ethers.BigNumber.from(0),
+       totalBeaconDepositCount: 0,
+      totalBeaconDepositedAmount: ethers.BigNumber.from(0),
+      totalBeaconWithdrawalCount: 0,
+      totalBeaconWithdrawalShare:ethers.BigNumber.from(0),
+    };
+    nextBatchTime = Date.now() + OneDayInSecs;
+   
+  }
   return findings;
 };
 const initialize: Initialize = async () => {
   // do some initialization on startup e.g. fetch data
   // set next batch time 
   nextBatchTime = Date.now() + OneDayInSecs;
+  dailyAlertsBatched = {
+    totalNewPods: 0,
+    totalPodShareUpdated: 0,
+    totalSlashed: 0,
+    totalStrategyAdded: 0,
+    totalStrategyRemoved: 0,
+    totalQueuedWithdrawalsCount: 0,
+    totalQueuedWithdrawalsShares: ethers.BigNumber.from(0),
+     totalBeaconDepositCount: 0,
+    totalBeaconDepositedAmount: ethers.BigNumber.from(0),
+    totalBeaconWithdrawalCount: 0,
+    totalBeaconWithdrawalShare:ethers.BigNumber.from(0),
+  };
   const eventMap: { [signature: string]: boolean } = {};
   try {
     // chainId = (await getEthersProvider().getNetwork()).chainId;

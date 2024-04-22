@@ -2,6 +2,23 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import { ethers } from "forta-agent";
+export interface DailyAlertBatch{
+    
+    totalNewPods: number;
+    totalPodShareUpdated: number;
+    totalSlashed: number;
+    totalStrategyAdded: number;
+    totalStrategyRemoved: number;
+    totalQueuedWithdrawalsCount: number;
+    totalQueuedWithdrawalsShares:  ethers.BigNumber;
+    // totalCompletedWithdrawalsCount: number;
+    // totalCompletedWithdrawalsAmount: ethers.BigNumber;
+    totalBeaconDepositCount: number;
+    totalBeaconDepositedAmount:  ethers.BigNumber;
+    totalBeaconWithdrawalCount: number;
+    totalBeaconWithdrawalShare:  ethers.BigNumber;
+
+}
 
 interface RepositoryTreeNode {
   path: string;
@@ -4368,5 +4385,6 @@ export function getAllAbis(): ethers.utils.Interface[] {
     export const  PodSharesUpdated_EVENT="PodSharesUpdated";
     export const  BeaconChainETHWithdrawalCompleted_EVENT="BeaconChainETHWithdrawalCompleted";
     export const  BeaconOracleUpdated_EVENT="BeaconOracleUpdated";
-  
+    export const  StrategyAddedToDepositWhitelist_EVENT="StrategyAddedToDepositWhitelist";
+    export const  StrategyRemovedFromDepositWhitelist_EVENT="StrategyRemovedFromDepositWhitelist";
    
