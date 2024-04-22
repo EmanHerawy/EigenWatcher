@@ -59,6 +59,7 @@ const handleTransaction: HandleTransaction = async (
       if (event.name === Deposit_EVENT) {
         const { shares, strategy, token, staker } = event.args;
         console.log({ shares, strategy, token, staker });
+        console.log({shares,SHARE_VALUE_THRESHOLD});
         
         if (shares.gt(SHARE_VALUE_THRESHOLD)) {
           // totalDeposited += amount;
@@ -66,7 +67,7 @@ const handleTransaction: HandleTransaction = async (
             Finding.fromObject({
               name: "EigenLayer Strategy received a deposit",
               description: `Big share is deposited into: ${strategy} by ${staker} with shares: ${shares}`,
-              alertId: "FORTA-EIGENLAYER-WATCHER-1",
+              alertId: "EIGENWATCHER-1",
               severity: FindingSeverity.Info,
               type: FindingType.Info,
               metadata: {
@@ -104,7 +105,7 @@ const handleTransaction: HandleTransaction = async (
               Finding.fromObject({
                 name: "Big Withdrawal Queued at EigenLayer",
                 description: `New withdrawal queued for strategies: ${strategies[i]} with shares: ${shares[i]} and should be executed at block: ${startBlock} by ${withdrawer} `,
-                alertId: "FORTA-EIGENLAYER-WATCHER-2",
+                alertId: "EIGENWATCHER-2",
                 severity: FindingSeverity.Info,
                 type: FindingType.Info,
                 metadata: {
@@ -142,7 +143,7 @@ const handleTransaction: HandleTransaction = async (
           Finding.fromObject({
             name: "EigenPod Deployed",
             description: `New EigenPod: ${eigenPod} is deployed by ${podOwner}`,
-            alertId: "FORTA-EIGENLAYER-WATCHER-3",
+            alertId: "EIGENWATCHER-3",
             severity: FindingSeverity.Info,
             type: FindingType.Info,
             metadata: {
@@ -157,7 +158,7 @@ const handleTransaction: HandleTransaction = async (
           Finding.fromObject({
             name: "Beacon Chain ETH Deposited",
             description: `Beacon Chain ETH deposited by ${podOwner} with amount: ${amount}`,
-            alertId: "FORTA-EIGENLAYER-WATCHER-4",
+            alertId: "EIGENWATCHER-4",
             severity: FindingSeverity.Info,
             type: FindingType.Info,
             metadata: {
@@ -174,7 +175,7 @@ const handleTransaction: HandleTransaction = async (
           Finding.fromObject({
             name: "Pod Shares Updated",
             description: `Pod shares updated by ${sharesDelta} for ${podOwner}`,
-            alertId: "FORTA-EIGENLAYER-WATCHER-5",
+            alertId: "EIGENWATCHER-5",
             severity: FindingSeverity.Info,
             type: FindingType.Info,
             metadata: {
@@ -190,7 +191,7 @@ const handleTransaction: HandleTransaction = async (
           Finding.fromObject({
             name: "Beacon Chain ETH Withdrawal Completed",
             description: `Beacon Chain ETH Withdrawal completed by ${withdrawer} for ${podOwner} with shares: ${shares}`,
-            alertId: "FORTA-EIGENLAYER-WATCHER-6",
+            alertId: "EIGENWATCHER-6",
             severity: FindingSeverity.Info,
             type: FindingType.Info,
             metadata: {
@@ -211,7 +212,7 @@ const handleTransaction: HandleTransaction = async (
           Finding.fromObject({
             name: "Beacon Oracle Updated",
             description: `Beacon Oracle updated to ${newOracleAddress}`,
-            alertId: "FORTA-EIGENLAYER-WATCHER-7",
+            alertId: "EIGENWATCHER-7",
             severity: FindingSeverity.Info,
             type: FindingType.Info,
             metadata: {
@@ -238,7 +239,7 @@ const handleTransaction: HandleTransaction = async (
           Finding.fromObject({
             name: "Operator Frozen",
             description: `Operator: ${slashedOperator} is frozen by ${slashingContract}`,
-            alertId: "FORTA-EIGENLAYER-WATCHER-2",
+            alertId: "EIGENWATCHER-2",
             severity: FindingSeverity.High,
             type: FindingType.Info,
             metadata: {
