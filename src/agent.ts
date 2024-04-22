@@ -1,8 +1,10 @@
 import {
   DELEGATION_MANAGER_ADDRESS,
+  POD_MANAGER_ADDRESS,
+  SLASHER_ADDRESS,
   STRATEGY_MANAGER_ADDRESS,
 } from "./helpers";
-import { Deposit_EVENT, WithdrawalQueued_EVENT, getAllAbis } from "./utils";
+import { BeaconChainETHDeposited_EVENT, BeaconChainETHWithdrawalCompleted_EVENT, BeaconOracleUpdated_EVENT, Deposit_EVENT, OperatorFrozen_EVENT, PodDeployed_EVENT, PodSharesUpdated_EVENT, WithdrawalQueued_EVENT, getAllAbis } from "./utils";
 import {
   BlockEvent,
   Finding,
@@ -47,8 +49,6 @@ const handleTransaction: HandleTransaction = async (
 ) => {
   const findings: Finding[] = [];
 
-  // limiting this agent to emit only 5 findings so that the alert feed is not spammed
-  if (findingsCount >= 5) return findings;
   if (txEvent.to?.toLocaleLowerCase() == STRATEGY_MANAGER_ADDRESS.toLocaleLowerCase()) {
     console.log("************************event detected for strategy manager *********************************");
     console.log({ hash: txEvent.transaction.hash });
@@ -84,7 +84,7 @@ const handleTransaction: HandleTransaction = async (
 
     }
   }
-  if (txEvent.to?.toLocaleLowerCase() == DELEGATION_MANAGER_ADDRESS.toLocaleLowerCase()) {
+  else if (txEvent.to?.toLocaleLowerCase() == DELEGATION_MANAGER_ADDRESS.toLocaleLowerCase()) {
     console.log("************************event detected for delegation manager *********************************");
     console.log({ hash: txEvent.transaction.hash });
     // console.log({logs:txEvent.logs});
@@ -127,8 +127,130 @@ const handleTransaction: HandleTransaction = async (
       }
 
     }
-  }
+  }else if (txEvent.to?.toLocaleLowerCase() == POD_MANAGER_ADDRESS.toLocaleLowerCase()) {
+    console.log("************************event detected for pod manager *********************************");
+    console.log({ hash: txEvent.transaction.hash });
+    // console.log({txEvent});
+    const events = filterLog(txEvent.logs);
+    console.log({ events });
+    for (const event of events) {
 
+      if (event.name === PodDeployed_EVENT) {
+        const { eigenPod, podOwner } = event.args;
+        console.log({ eigenPod, podOwner });
+        findings.push(
+          Finding.fromObject({
+            name: "EigenPod Deployed",
+            description: `New EigenPod: ${eigenPod} is deployed by ${podOwner}`,
+            alertId: "ALERT-3",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              eigenPod,
+              podOwner,
+            },
+          })
+        );}else if (event.name === BeaconChainETHDeposited_EVENT) {
+        const { amount, podOwner } = event.args;
+        console.log({ amount, podOwner });
+        findings.push(
+          Finding.fromObject({
+            name: "Beacon Chain ETH Deposited",
+            description: `Beacon Chain ETH deposited by ${podOwner} with amount: ${amount}`,
+            alertId: "ALERT-4",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              amount,
+              podOwner,
+            },
+          })
+        );
+          
+        }else if (event.name === PodSharesUpdated_EVENT) {
+        const { sharesDelta, podOwner } = event.args;
+        console.log({ sharesDelta, podOwner });
+        findings.push(
+          Finding.fromObject({
+            name: "Pod Shares Updated",
+            description: `Pod shares updated by ${sharesDelta} for ${podOwner}`,
+            alertId: "ALERT-5",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              sharesDelta,
+              podOwner,
+            },
+          })
+        );
+        }else if (event.name === BeaconChainETHWithdrawalCompleted_EVENT) {
+        const { shares, nonce, delegatedAddress, withdrawer, withdrawalRoot, podOwner } = event.args;
+        console.log({ shares, nonce, delegatedAddress, withdrawer, withdrawalRoot, podOwner });
+        findings.push(
+          Finding.fromObject({
+            name: "Beacon Chain ETH Withdrawal Completed",
+            description: `Beacon Chain ETH Withdrawal completed by ${withdrawer} for ${podOwner} with shares: ${shares}`,
+            alertId: "ALERT-6",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              shares,
+              nonce,
+              delegatedAddress,
+              withdrawer,
+              withdrawalRoot,
+              podOwner,
+            },
+          })
+        );
+          
+        } else if (event.name === BeaconOracleUpdated_EVENT) {
+        const { newOracleAddress } = event.args;
+        console.log({ newOracleAddress });
+        findings.push(
+          Finding.fromObject({
+            name: "Beacon Oracle Updated",
+            description: `Beacon Oracle updated to ${newOracleAddress}`,
+            alertId: "ALERT-7",
+            severity: FindingSeverity.Info,
+            type: FindingType.Info,
+            metadata: {
+              newOracleAddress,
+            },
+          })
+        );
+        }
+
+    }
+  }else if (txEvent.to?.toLocaleLowerCase() == SLASHER_ADDRESS.toLocaleLowerCase()) {
+    /// @dev @notice : The deployed slasher contract in mainnet has no logic , the next version should have. EigenLayer has not activated the slashing mechanism yet.
+    console.log("************************event detected for slasher *********************************");
+    console.log({ hash: txEvent.transaction.hash });
+    // console.log({txEvent});
+    const events = filterLog(txEvent.logs);
+    console.log({ events });
+    for (const event of events) {
+      if (event.name === OperatorFrozen_EVENT){
+ 
+        const { slashedOperator, slashingContract } = event.args;
+        console.log({ slashedOperator, slashingContract });
+        findings.push(
+          Finding.fromObject({
+            name: "Operator Frozen",
+            description: `Operator: ${slashedOperator} is frozen by ${slashingContract}`,
+            alertId: "ALERT-2",
+            severity: FindingSeverity.High,
+            type: FindingType.Info,
+            metadata: {
+              slashedOperator,
+              slashingContract,
+            },
+          })
+        );
+      }
+
+    }
+  }
   return findings;
 };
 const initialize: Initialize = async () => {

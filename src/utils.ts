@@ -4362,3 +4362,11 @@ export function getAllAbis(): ethers.utils.Interface[] {
   export const Deposit_EVENT="Deposit";
     export const WithdrawSharesAsTokens_EVENT="WithdrawSharesAsTokens";
     export const  WithdrawalQueued_EVENT="WithdrawalQueued";
+    export const  OperatorFrozen_EVENT="OperatorFrozen";
+    export const  PodDeployed_EVENT="PodDeployed";
+    export const  BeaconChainETHDeposited_EVENT="BeaconChainETHDeposited";
+    export const  PodSharesUpdated_EVENT="PodSharesUpdated";
+    export const  BeaconChainETHWithdrawalCompleted_EVENT="BeaconChainETHWithdrawalCompleted";
+    export const  BeaconOracleUpdated_EVENT="BeaconOracleUpdated";
+  
+   
