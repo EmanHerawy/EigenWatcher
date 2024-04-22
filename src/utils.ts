@@ -2769,3 +2769,6 @@ export function getAllAbis(): ethers.utils.Interface[] {
   return abis;
   
   }
+  export const Deposit_EVENT="Deposit";
+    export const WithdrawSharesAsTokens_EVENT="WithdrawSharesAsTokens";
+    export const  WithdrawalQueued_EVENT="WithdrawalQueued";

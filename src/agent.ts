@@ -1,14 +1,8 @@
 import {
   DELEGATION_MANAGER_ADDRESS,
-  WITHDRAWAL_QUEUED_EVENT,
-  OPERATOR_SHARES_INCREASED_EVENT,
-  UNDELEGATE_FUNCTION,
-  StakerDelegated_EVENT,
-  WITHDRAWAL_COMPLETE_EVENT,
   STRATEGY_MANAGER_ADDRESS,
-  Deposit_EVENT,
 } from "./helpers";
-import { getAllAbis } from "./utils";
+import { Deposit_EVENT, WithdrawalQueued_EVENT, getAllAbis } from "./utils";
 import {
   BlockEvent,
   Finding,
@@ -29,7 +23,12 @@ import {
 
 let findingsCount = 0;
 const OneDayInSecs = 86400;
-let nextBatchTime = 0;
+/// @dev TODO: for daily alert
+let nextBatchTime = 0; 
+// let totalDeposited = ethers.BigNumber.from(0);
+// let totalWithdrawalInQueue = ethers.BigNumber.from(0);
+// let's set dummy threshold for now
+const SHARE_VALUE_THRESHOLD = ethers.utils.parseEther("1");
 let EVENT_TOPIC_TO_FRAGMENT: { [topic: string]: ethers.utils.EventFragment[] } =
   {};
 type InputsMetadata = {
@@ -50,89 +49,90 @@ const handleTransaction: HandleTransaction = async (
 
   // limiting this agent to emit only 5 findings so that the alert feed is not spammed
   if (findingsCount >= 5) return findings;
-if (txEvent.to?.toLocaleLowerCase()==STRATEGY_MANAGER_ADDRESS.toLocaleLowerCase()) {
-console.log("************************event detected for strategy manager *********************************");
-console.log({hash:txEvent.transaction.hash});
-console.log({txEvent});
-const events=filterLog(txEvent.logs);
-console.log({events});
+  if (txEvent.to?.toLocaleLowerCase() == STRATEGY_MANAGER_ADDRESS.toLocaleLowerCase()) {
+    console.log("************************event detected for strategy manager *********************************");
+    console.log({ hash: txEvent.transaction.hash });
+    // console.log({txEvent});
+    const events = filterLog(txEvent.logs);
+    console.log({ events });
+    for (const event of events) {
+      if (event.name === Deposit_EVENT) {
+        const { shares, strategy, token, staker } = event.args;
+        console.log({ shares, strategy, token, staker });
+        
+        if (shares.gt(SHARE_VALUE_THRESHOLD)) {
+          // totalDeposited += amount;
+          findings.push(
+            Finding.fromObject({
+              name: "EigenLayer Strategy received a deposit",
+              description: `Big share is deposited into: ${strategy} by ${staker} with shares: ${shares}`,
+              alertId: "FORTA-1",
+              severity: FindingSeverity.Info,
+              type: FindingType.Info,
+              metadata: {
+                strategy,
+                token,
+                staker,
+                shares,
+
+              },
+            })
+          );
+        }
+      }
 
 
-}
-  if (txEvent.to?.toLocaleLowerCase()==DELEGATION_MANAGER_ADDRESS.toLocaleLowerCase()) {
+    }
+  }
+  if (txEvent.to?.toLocaleLowerCase() == DELEGATION_MANAGER_ADDRESS.toLocaleLowerCase()) {
     console.log("************************event detected for delegation manager *********************************");
-    console.log({hash:txEvent.transaction.hash});
+    console.log({ hash: txEvent.transaction.hash });
     // console.log({logs:txEvent.logs});
-    console.log({txEvent});
-      const events=filterLog(txEvent.logs);
-      console.log({events});
-    // const queueWithdrawalEvent = txEvent.filterLog(
-    //   WITHDRAWAL_QUEUED_EVENT,
-    //   DELEGATION_MANAGER_ADDRESS
-    // );
-    // const shareIncreasedEvent = txEvent.filterLog(
-    //   OPERATOR_SHARES_INCREASED_EVENT,
-    //   DELEGATION_MANAGER_ADDRESS
-    // );
-    // const undelegateCall = txEvent.filterFunction(
-    //   UNDELEGATE_FUNCTION,
-    //   DELEGATION_MANAGER_ADDRESS
-    // );
-    // const delegateevent = txEvent.filterLog(
-    //   StakerDelegated_EVENT,
-    //   DELEGATION_MANAGER_ADDRESS
-    // );
-    // const WithdrawalCompleteEvent = txEvent.filterLog(
-    //   WITHDRAWAL_COMPLETE_EVENT,
-    //   DELEGATION_MANAGER_ADDRESS
-    // );
-    
-    // console.log("************************queueWithdrawalEvent*********************************");
-    // console.log(queueWithdrawalEvent);
-    // console.log("************************shareIncreasedEvent*********************************");
-    // console.log(shareIncreasedEvent);
-    // console.log("************************delegateevent*********************************");
-    // console.log(delegateevent);
-    // console.log("************************undelegateCall*********************************");
-    // console.log(undelegateCall);
-    // console.log("************************WithdrawalCompleteEvent*********************************");
-    // console.log(WithdrawalCompleteEvent);
-     } 
-  // // filter the transaction logs for Tether transfer events
-  // const tetherTransferEvents = txEvent.filterLog(
-  //   ERC20_TRANSFER_EVENT,
-  //   TETHER_ADDRESS
-  // );
+    // console.log({txEvent});
+    const events = filterLog(txEvent.logs);
+    console.log({ events });
+    for (const event of events) {
+      if (event.name === WithdrawalQueued_EVENT) {
+        const { startBlock, nonce, withdrawer, delegatedTo, staker, strategies, shares } = event.args;
+        // totalWithdrawn += amount;
+        console.log({ strategies, shares });
+        console.log({ startBlock, nonce, withdrawer, delegatedTo, staker });
+        
+        for (let i = 0; i < strategies?.length; i++) {
+          if (shares[i].gt(SHARE_VALUE_THRESHOLD)) {
+            findings.push(
+              Finding.fromObject({
+                name: "Big Withdrawal Queued at EigenLayer",
+                description: `New withdrawal queued for strategies: ${strategies[i]} with shares: ${shares[i]} and should be executed at block: ${startBlock} by ${withdrawer} `,
+                alertId: "ALERT-1",
+                severity: FindingSeverity.Info,
+                type: FindingType.Info,
+                metadata: {
+                  startBlock,
+                  nonce,
+                  withdrawer,
+                  delegatedTo,
+                  staker,
+                  strategy: strategies[i],
+                  share: shares[i],
+                },
+              })
+            );
+          }
 
-  // tetherTransferEvents.forEach((transferEvent) => {
-  //   // extract transfer event arguments
-  //   const { to, from, value } = transferEvent.args;
-  //   // shift decimals of transfer value
-  //   const normalizedValue = value.div(10 ** TETHER_DECIMALS);
+        }
 
-  //   // if more than 10,000 Tether were transferred, report it
-  //   if (normalizedValue.gt(10000)) {
-  //     findings.push(
-  //       Finding.fromObject({
-  //         name: "High Tether Transfer",
-  //         description: `High amount of USDT transferred: ${normalizedValue}`,
-  //         alertId: "FORTA-1",
-  //         severity: FindingSeverity.Low,
-  //         type: FindingType.Info,
-  //         metadata: {
-  //           to,
-  //           from,
-  //         },
-  //       })
-  //     );
-  //     findingsCount++;
-  //   }
-  // });
+
+
+      }
+
+    }
+  }
 
   return findings;
 };
 const initialize: Initialize = async () => {
-   // do some initialization on startup e.g. fetch data
+  // do some initialization on startup e.g. fetch data
   // set next batch time 
   nextBatchTime = Date.now() + OneDayInSecs;
   const eventMap: { [signature: string]: boolean } = {};
@@ -202,9 +202,9 @@ const initialize: Initialize = async () => {
 
 // const healthCheck: HealthCheck = async () => {
 //   const errors: string[] = [];
-  // detect some health check condition
-  // errors.push("not healthy due to some condition")
-  // return errors;
+// detect some health check condition
+// errors.push("not healthy due to some condition")
+// return errors;
 // }
 function filterLog(logs: Log[]) {
   const results: any[] = [];
