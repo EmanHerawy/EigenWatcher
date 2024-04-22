@@ -2,7 +2,7 @@
 FROM node:12-alpine AS builder
 WORKDIR /app
 COPY . .
-RUN npm ci
+RUN npm install
 RUN npm run build
 
 # Final stage: copy compiled Javascript from previous stage and install production dependencies
@@ -14,5 +14,5 @@ WORKDIR /app
 COPY --from=builder /app/dist ./src
 COPY package*.json ./
 COPY LICENSE.md ./
-RUN npm ci --production
+RUN npm install --production
 CMD [ "npm", "run", "start:prod" ]

@@ -65,6 +65,21 @@ Describe each of the type of alerts fired by this agent
   - Severity is always set to "Info" (mention any conditions where it could be something else)
   - Type is always set to "info" (mention any conditions where it could be something else)
   - Mention any other type of metadata fields included with this alert.
+- EIGENWATCHER-9
+  - Fired when a transaction to removed Strategy from Deposit Whitelist  in EigenLayer's Strategy manger is detected.
+  - Severity is always set to "Info" (mention any conditions where it could be something else)
+  - Type is always set to "info" (mention any conditions where it could be something else)
+  - Mention any other type of metadata fields included with this alert.
+- EIGENWATCHER-10
+  - Fired when a transaction to add Strategy to Deposit Whitelist  in EigenLayer's Strategy manger is detected.
+  - Severity is always set to "Info" (mention any conditions where it could be something else)
+  - Type is always set to "info" (mention any conditions where it could be something else)
+  - Mention any other type of metadata fields included with this alert.
+- EIGENWATCHER-11
+  - Fired daily to summarize EigenLayer's main activities e.g. total funds deposited in EigenLayer's strategy manager, total funds queued for withdrawal from EigenLayer's delegation manager, total amount of withdrawn Eth or LSTs.
+  - Severity is always set to "Info" (mention any conditions where it could be something else)
+  - Type is always set to "info" (mention any conditions where it could be something else)
+  - Mention any other type of metadata fields included with this alert.
 
 ## Test Data
 
@@ -81,7 +96,7 @@ The agent behaviour can be verified by checking [output file](./output) generate
 
 ## Future Work:
 - Update the threshold value for the alerts to be reasonable value in $.
-- Add a daily summary of the EigenLayer's main activities e.g. total funds deposited in EigenLayer's strategy manager, total funds queued for withdrawal from EigenLayer's delegation manager, total amount of withdrawn Eth or LSTs.
+- Add more alerts to detect other activities in EigenLayer.
 - Create a TG bot or twitter account to send the alerts to the subscribed users.
 
 
