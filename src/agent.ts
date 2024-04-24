@@ -25,7 +25,7 @@ import {
 } from "forta-agent";
 
 let findingsCount = 0;
-const OneDayInSecs = 86400;
+const OneDayInMillisecond = 86400 * 1000;
 /// @dev TODO: for daily alert
 let nextBatchTime = 0; 
 
@@ -33,7 +33,7 @@ let dailyAlertsBatched:DailyAlertBatch;
 // let totalDeposited = ethers.BigNumber.from(0);
 // let totalWithdrawalInQueue = ethers.BigNumber.from(0);
 // let's set dummy threshold for now
-const SHARE_VALUE_THRESHOLD = ethers.utils.parseEther("1");
+const SHARE_VALUE_THRESHOLD = ethers.utils.parseEther("10");
 let EVENT_TOPIC_TO_FRAGMENT: { [topic: string]: ethers.utils.EventFragment[] } =
   {};
 type InputsMetadata = {
@@ -129,7 +129,8 @@ const handleTransaction: HandleTransaction = async (
     console.log({ events });
     for (const event of events) {
       if (event.name === WithdrawalQueued_EVENT) {
-        const { startBlock, nonce, withdrawer, delegatedTo, staker, strategies, shares } = event.args;
+        const { withdrawalRoot, withdrawal} = event.args;
+        const { startBlock, nonce, withdrawer, delegatedTo, staker, strategies, shares } =withdrawal;
         // totalWithdrawn += amount;
         console.log({ strategies, shares });
         console.log({ startBlock, nonce, withdrawer, delegatedTo, staker });
@@ -141,7 +142,7 @@ const handleTransaction: HandleTransaction = async (
             findings.push(
               Finding.fromObject({
                 name: "Big Withdrawal Queued at EigenLayer",
-                description: `New withdrawal queued for strategies: ${strategies[i]} with shares: ${shares[i]} and should be executed at block: ${startBlock} by ${withdrawer} `,
+                description: `New withdrawal queued for strategies: ${strategies[i]} with shares: ${shares[i]} and should be executed at block: ${startBlock} by ${withdrawer}. withdrawal Root is ${withdrawalRoot}`,
                 alertId: "EIGENWATCHER-2",
                 severity: FindingSeverity.Info,
                 type: FindingType.Info,
@@ -153,6 +154,7 @@ const handleTransaction: HandleTransaction = async (
                   staker,
                   strategy: strategies[i],
                   share: shares[i],
+                  withdrawalRoot,
                 },
               })
             );
@@ -335,7 +337,7 @@ const handleTransaction: HandleTransaction = async (
       totalBeaconWithdrawalCount: 0,
       totalBeaconWithdrawalShare:ethers.BigNumber.from(0),
     };
-    nextBatchTime = Date.now() + OneDayInSecs;
+    nextBatchTime = Date.now() + OneDayInMillisecond;
    
   }
   return findings;
@@ -343,7 +345,7 @@ const handleTransaction: HandleTransaction = async (
 const initialize: Initialize = async () => {
   // do some initialization on startup e.g. fetch data
   // set next batch time 
-  nextBatchTime = Date.now() + OneDayInSecs;
+  nextBatchTime = Date.now() + OneDayInMillisecond;
   dailyAlertsBatched = {
     totalNewPods: 0,
     totalPodShareUpdated: 0,
@@ -407,7 +409,7 @@ const initialize: Initialize = async () => {
 // const initialize: Initialize = async () => {
 //   // do some initialization on startup e.g. fetch data
 //   // set next batch time 
-     nextBatchTime = Date.now() + OneDayInSecs;
+     nextBatchTime = Date.now() + OneDayInMillisecond;
 // }
 
 // const handleBlock: HandleBlock = async (blockEvent: BlockEvent) => {
