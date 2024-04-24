@@ -24,6 +24,7 @@ EigenWatcher performs the following tasks:
 - Detects transactions to complete withdrawing ETH from the Beacon Chain in EigenLayer's POD manager.
 - Detects transactions to update Beacon Oracle ETH in EigenLayer's POD manager.
 - Detects transactions to freeze an operator in EigenLayer's Slasher (although EigenLayer's Slasher is not activated yet, it's important to track this activity).
+- A daily summary alert to summarize EigenLayer's main activities, such as the total funds deposited in EigenLayer's strategy manager, total funds queued for withdrawal from EigenLayer's delegation manager, and total amount of withdrawn ETH or LSTs.
 
 ## Supported Chains
 
